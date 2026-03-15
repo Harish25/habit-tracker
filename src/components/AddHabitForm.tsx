@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFormState } from "react-dom";
-import { createHabit } from "@/app/habits/actions"; // Assuming your action name
+import { createHabit } from "@/app/habits/actions"; 
 
 export default function AddHabitForm({ userId, onClose }: { userId: number, onClose: () => void }) {
   const [state, formAction] = useFormState(async (prevState: any, formData: FormData) => {
@@ -10,10 +10,10 @@ export default function AddHabitForm({ userId, onClose }: { userId: number, onCl
       const title = formData.get("title") as string;
       const description = formData.get("description") as string;
       
-      // Call your action with the optional description
+
       await createHabit(userId, title, description);
       
-      onClose(); // Close modal on success
+      onClose(); 
       return { message: "Success!", error: false };
     } catch (e: any) {
       return { message: e.message, error: true };
