@@ -2,7 +2,6 @@ import db from "@/lib/db";
 import { acceptFriendRequest, rejectFriendRequest } from "@/app/friends/actions";
 
 export default async function PendingRequests({ userId }: { userId: number }) {
-  // Fetch requests where the current user is the receiver
   const requests = await db.friendship.findMany({
     where: { 
       receiverId: userId,

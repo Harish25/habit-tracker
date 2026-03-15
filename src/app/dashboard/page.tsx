@@ -2,26 +2,23 @@ import db from "@/lib/db";
 import HabitCard from "@/components/HabitCard";
 import FriendsList from "@/components/FriendsList";
 import PendingRequests from "@/components/PendingRequests";
-import AddHabitButton from "@/components/AddHabitButton"; // [1] Import the new interactive button
+import AddHabitButton from "@/components/AddHabitButton"; 
 
 export default async function Dashboard() {
   const currentUserId = 6; 
 
-  // Fetch habits from the database
   const habits = await db.habit.findMany({
-    where: { creatorId: currentUserId } // [2] Using underscore to match your DB schema
+    where: { creatorId: currentUserId }
   });
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Main Column */}
         <div className="lg:col-span-8 space-y-6">
           <header className="flex justify-between items-center">
             <h1 className="text-3xl font-black text-gray-900">My Daily Habits</h1>
             
-            {/* [3] Swapped static button for the Client Component button */}
             <AddHabitButton userId={currentUserId} />
           </header>
 
@@ -40,7 +37,6 @@ export default async function Dashboard() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="lg:col-span-4 space-y-6">
           <FriendsList userId={currentUserId} />
         </div>
