@@ -12,7 +12,6 @@ export default async function FriendsPage() {
         <p className="text-gray-500">Connect with partners to stay accountable.</p>
       </header>
 
-      {/* Interactive Client Component */}
       <AddFriendForm currentUserId={currentUserId} />
 
       <section>

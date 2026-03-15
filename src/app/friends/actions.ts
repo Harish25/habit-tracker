@@ -3,10 +3,7 @@
 import db from "@/lib/db"; 
 import { revalidatePath } from "next/cache";
 
-/**
- * 1. SEND FRIEND REQUEST
- * Now includes a check to prevent duplicate requests in either direction.
- */
+//send friend req
 export async function sendFriendRequest(senderId: number, receiverEmail: string) {
   const receiver = await db.user.findUnique({ 
     where: { email: receiverEmail } 
@@ -15,7 +12,7 @@ export async function sendFriendRequest(senderId: number, receiverEmail: string)
   if (!receiver) throw new Error("User not found");
   if (senderId === receiver.id) throw new Error("You cannot add yourself");
 
-  // Check if a relationship already exists (Sender -> Receiver OR Receiver -> Sender)
+  //check if friendship already exists
   const existingFriendship = await db.friendship.findFirst({
     where: {
       OR: [
@@ -41,9 +38,7 @@ export async function sendFriendRequest(senderId: number, receiverEmail: string)
   revalidatePath("/friends");
 }
 
-/**
- * 2. ACCEPT FRIEND REQUEST
- */
+//accepting friend req
 export async function acceptFriendRequest(requestId: number) {
   await db.friendship.update({
     where: { id: requestId },
@@ -54,9 +49,7 @@ export async function acceptFriendRequest(requestId: number) {
   revalidatePath("/friends");
 }
 
-/**
- * 3. REJECT FRIEND REQUEST
- */
+//reject friend req
 export async function rejectFriendRequest(requestId: number) {
   await db.friendship.update({
     where: { id: requestId },
@@ -67,9 +60,7 @@ export async function rejectFriendRequest(requestId: number) {
   revalidatePath("/friends");
 }
 
-/**
- * 4. UNFRIEND / REMOVE REQUEST
- */
+//delete request
 export async function removeFriend(requestId: number) {
   await db.friendship.delete({
     where: { id: requestId },
@@ -79,9 +70,7 @@ export async function removeFriend(requestId: number) {
   revalidatePath("/friends");
 }
 
-/**
- * 5. GET ACTIVE FRIENDS
- */
+//friends list
 export async function getFriendsList(userId: number) {
   return await db.friendship.findMany({
     where: {
