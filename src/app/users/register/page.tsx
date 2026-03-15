@@ -1,0 +1,62 @@
+'use client'
+
+import { useActionState } from 'react'
+import { registerUser } from '../actions'
+import Link from 'next/link'
+
+// Define styles as constants to keep JSX clean
+const styles = {
+  container: "flex min-h-screen items-center justify-center bg-gray-50",
+  card: "w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg",
+  input: "w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-black",
+  button: "w-full py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition"
+}
+
+export default function RegisterPage() {
+  const [state, formAction, isPending] = useActionState(registerUser, null)
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h1 className="text-2xl font-bold text-center text-gray-900">Create Account</h1>
+        
+        {state?.error && (
+          <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
+            {state.error}
+          </p>
+        )}
+        
+        <form action={formAction} className="space-y-4">
+          <input 
+            name="username" 
+            placeholder="Username" 
+            required 
+            className={styles.input} 
+          />
+          <input 
+            name="email" 
+            type="email" 
+            placeholder="Email" 
+            required 
+            className={styles.input} 
+          />
+          <input 
+            name="password" 
+            type="password" 
+            placeholder="Password" 
+            required 
+            className={styles.input} 
+          />
+          
+          <button disabled={isPending} className={styles.button}>
+            {isPending ? 'Processing...' : 'Register'}
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-gray-600">
+          Already have an account? <Link href="/users/login" className="text-blue-600 hover:underline">Log in</Link>
+        </p>
+      </div>
+    </div>
+  )
+}
