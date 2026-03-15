@@ -23,7 +23,7 @@ export async function registerUser(prevState: any, formData: FormData) {
     if (error.code === 'P2002') return { error: "Email already exists." }
     return { error: "Registration failed." }
   }
-  redirect('/login')
+  redirect('/users/login')
 }
 
 export async function loginUser(prevState: any, formData: FormData) {
