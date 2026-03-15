@@ -1,7 +1,6 @@
 import db from "@/lib/db";
 
 export default async function FriendsList({ userId }: { userId: number }) {
-  // Fetch all accepted friendships for this user
   const friends = await db.friendship.findMany({
     where: {
       OR: [
@@ -26,7 +25,6 @@ export default async function FriendsList({ userId }: { userId: number }) {
   return (
     <div className="grid gap-4">
       {friends.map((f) => {
-        // Show the user that is NOT the current user
         const friend = f.requesterId === userId ? f.receiver : f.requester;
         
         return (
@@ -40,7 +38,6 @@ export default async function FriendsList({ userId }: { userId: number }) {
                 <p className="text-xs text-green-600 font-semibold uppercase">Active Partner</p>
               </div>
             </div>
-            {/* You can add a 'Remove' button here later */}
           </div>
         );
       })}
