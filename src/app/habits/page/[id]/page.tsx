@@ -42,7 +42,7 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     });
   }
 
-  // Placeholder: fetch recent notifications, need to update with Pusher
+  // Fetch old notifications from DB
   const notifications = await prisma.notification.findMany({
     where: { habitId },
     include: {
@@ -85,6 +85,8 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
              group: groupStreak?.currentStreak || 0
            }}
            notifications={formattedNotifications}
+           pusherKey={process.env.PUSHER_KEY || ""}
+           pusherCluster={process.env.PUSHER_CLUSTER || ""}
         />
       </div>
     </main>

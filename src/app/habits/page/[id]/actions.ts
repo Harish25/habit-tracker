@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from "../../../../generated/prisma/client";
+import { pusherServer } from "@/lib/pusherServer";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -32,7 +33,7 @@ export async function logHabitEntry(habitId: number, notes: string) {
       throw new Error("You are not a member of this habit");
     }
 
-    // Create habit log entry
+    // Create habit log DB entry
     await prisma.habitLog.create({
       data: {
         habitId,
@@ -68,22 +69,30 @@ export async function logHabitEntry(habitId: number, notes: string) {
 
     // Add notification for notification feed
     const user = await prisma.user.findUnique({ where: { id: userId }});
-    await prisma.notification.create({
+    const username = user?.username || 'Someone';
+    const notificationMessage = `${username} has completed the habit!\nStreak Count: ${personalStreak.currentStreak}\nNote: ${notes}`;
+    
+    const newNotification = await prisma.notification.create({
       data: {
         userId,
         habitId,
-        message: `${user?.username || 'Someone'} completed the habit!`,
+        message: notificationMessage,
       }
     });
 
-    // Update page to show new data
+    // Broadcast notification to Pusher channel
+    await pusherServer.trigger(`private-habitNotify-${habitId}`, "new-notification", {
+      id: newNotification.id,
+      user: username,
+      action: notificationMessage.replace(username, '').trim(),
+      time: "Just now"
+    });
+
+    // Ensure new data shown
     revalidatePath(`/habits/page/${habitId}`);
     
     return { success: true };
   } catch (error: unknown) {
-    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === 'P2002') {
-       return { success: false, error: "You have already logged this habit today." };
-    }
     const message = error instanceof Error ? error.message : "Failed to log habit";
     return { success: false, error: message };
   }
