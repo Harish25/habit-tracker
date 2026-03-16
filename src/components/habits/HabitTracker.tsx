@@ -12,9 +12,11 @@ interface HabitTrackerProps {
   habit: { id: number; name: string; description: string; isGroup: boolean };
   streakData: { personal: number; group: number };
   notifications: { id: number; user: string; action: string; time: string }[];
+  pusherKey: string;
+  pusherCluster: string;
 }
 
-export default function HabitTracker({ habit, streakData, notifications }: HabitTrackerProps) {
+export default function HabitTracker({ habit, streakData, notifications, pusherKey, pusherCluster }: HabitTrackerProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
 
   const renderTabContent = () => {
@@ -27,7 +29,12 @@ export default function HabitTracker({ habit, streakData, notifications }: Habit
           isGroup={habit.isGroup} 
         />;
       case "updates":
-        return <HabitUpdatesTab notifications={notifications} />;
+        return <HabitUpdatesTab 
+          habitId={habit.id}
+          initialNotifications={notifications} 
+          pusherKey={pusherKey}
+          pusherCluster={pusherCluster}
+        />;
       case "logging":
         return <HabitLoggingTab habitId={habit.id} />;
       case "settings":
