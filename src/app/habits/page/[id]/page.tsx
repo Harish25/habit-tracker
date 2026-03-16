@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation"; 
 import HabitTracker from "@/components/habits/HabitTracker";
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from "../../../../generated/prisma/client";
+import { getSession } from "@/lib/session";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -16,6 +17,18 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     notFound();
   }
 
+  // --- SESSION LOGIC ---
+  const session = await getSession();
+  
+  // If there is no active session, send them to the login page immediately
+  if (!session) {
+    redirect('/users/login');
+  }
+
+  // Use the real ID from the verified cookie
+  const currentUserId = session.userId;
+  // ---------------------
+
   // Fetch habit details
   const habit = await prisma.habit.findUnique({
     where: { id: habitId },
@@ -24,10 +37,6 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
   if (!habit) {
     notFound();
   }
-
-  // Placeholder userId: 1
-  // need to update to use actual user ID from session
-  const currentUserId = 1;
 
   // Fetch individual streak
   const personalStreak = await prisma.streak.findUnique({

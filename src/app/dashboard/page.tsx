@@ -3,9 +3,21 @@ import HabitCard from "@/components/HabitCard";
 import FriendsList from "@/components/FriendsList";
 import PendingRequests from "@/components/PendingRequests";
 import AddHabitButton from "@/components/AddHabitButton"; 
+import LogoutButton from "@/components/logoutButton"; 
+import { getSession } from "@/lib/session"; 
+import { redirect } from "next/navigation"; 
+
+export const dynamic = 'force-dynamic';
 
 export default async function Dashboard() {
-  const currentUserId = 6; 
+
+  const session = await getSession();
+
+  if (!session) {
+    redirect('/users/login');
+  }
+
+  const currentUserId = session.userId;
 
   const habits = await db.habit.findMany({
     where: { creatorId: currentUserId }
@@ -19,7 +31,11 @@ export default async function Dashboard() {
           <header className="flex justify-between items-center">
             <h1 className="text-3xl font-black text-gray-900">My Daily Habits</h1>
             
-            <AddHabitButton userId={currentUserId} />
+            {/* Grouping Logout and Add Habit buttons together */}
+            <div className="flex items-center gap-3">
+              <LogoutButton />
+              <AddHabitButton userId={currentUserId} />
+            </div>
           </header>
 
           <PendingRequests userId={currentUserId} />
