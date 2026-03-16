@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { logHabit } from "@/app/habits/actions"; 
+import { logHabitEntry } from "@/app/habits/page/[id]/actions";
 import UploadButton from "@/components/uploadButton";
 
 interface HabitLoggingTabProps {
   habitId: number;
-  userId: number; 
+  userId?: number; // temp -not used by logHabitEntry
 }
 
 export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProps) {
@@ -28,7 +28,7 @@ export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProp
     setError("");
     setIsPending(true);
     
-    // 1. Create FormData to bundle text and file
+    // Create FormData to bundle note with file
     const formData = new FormData();
     formData.append("notes", notes);
     if (selectedFile) {
@@ -36,8 +36,13 @@ export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProp
     }
 
     try {
-      // 2. Call the action with userId and habitId for the DO path
-      await logHabit(formData, userId, habitId);
+      // logHabitEntry saves the log, creates notification, and triggers Pusher
+      const result = await logHabitEntry(habitId, notes);
+      if (!result.success) {
+        setError(result.error || "Failed to log habit.");
+        setIsPending(false);
+        return;
+      }
       
       setIsSubmitted(true);
       setIsPending(false);
@@ -86,7 +91,6 @@ export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProp
           <label className="text-sm font-medium text-gray-700">Proof of Progress (Optional)</label>
           <UploadButton onFileSelect={setSelectedFile} />
         </div>
-        {/* --------------------------- */}
 
         <button
           type="submit"

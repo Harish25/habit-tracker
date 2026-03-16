@@ -19,8 +19,14 @@ export default async function Dashboard() {
 
   const currentUserId = session.userId;
 
+  const habitMembers = await db.habitMember.findMany({
+    where: { userId: currentUserId }
+  });
+
+  const habitIds = habitMembers.map((hm) => hm.habitId);
+
   const habits = await db.habit.findMany({
-    where: { creatorId: currentUserId }
+    where: { id: { in: habitIds } }
   });
 
   return (
