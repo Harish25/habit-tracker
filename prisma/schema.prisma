@@ -93,7 +93,6 @@ model HabitLog {
   habit         Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([habitId, userId, dateCompleted])
   @@map("habit_logs")
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Pusher from "pusher-js";
 import HabitOverviewTab from "./HabitOverviewTab";
 import HabitUpdatesTab from "./HabitUpdatesTab";
 import HabitLoggingTab from "./HabitLoggingTab";
@@ -12,11 +13,39 @@ interface HabitTrackerProps {
   habit: { id: number; name: string; description: string; isGroup: boolean };
   streakData: { personal: number; group: number };
   notifications: { id: number; user: string; action: string; time: string }[];
-  userId: number; // Added userId to interface
+  pusherKey: string;
+  pusherCluster: string;
+  userId: number;
 }
 
-export default function HabitTracker({ habit, streakData, notifications, userId }: HabitTrackerProps) {
+export default function HabitTracker({ habit, streakData, notifications: initialNotifications, pusherKey, pusherCluster, userId }: HabitTrackerProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [liveNotifications, setLiveNotifications] = useState(initialNotifications);
+
+  // Subscribe to channel in parent component to listen to updates across tabs
+  useEffect(() => {
+    if (!pusherKey || !pusherCluster) return;
+
+    const pusher = new Pusher(pusherKey, {
+      cluster: pusherCluster,
+      authEndpoint: "/api/pusher/auth",
+    });
+
+    const channelName = `private-habitNotify-${habit.id}`;
+    const channel = pusher.subscribe(channelName);
+
+    channel.bind("new-notification", (data: { id: number; user: string; action: string; time: string }) => {
+      setLiveNotifications(prev => {
+        if (prev.some(n => n.id === data.id)) return prev;
+        return [data, ...prev];
+      });
+    });
+
+    return () => {
+      pusher.unsubscribe(channelName);
+      pusher.disconnect();
+    };
+  }, [habit.id, pusherKey, pusherCluster]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -28,9 +57,10 @@ export default function HabitTracker({ habit, streakData, notifications, userId 
           isGroup={habit.isGroup} 
         />;
       case "updates":
-        return <HabitUpdatesTab notifications={notifications} />;
+        return <HabitUpdatesTab 
+          notifications={liveNotifications}
+        />;
       case "logging":
-        // Pass both habitId and userId to the logging tab
         return <HabitLoggingTab habitId={habit.id} userId={userId} />;
       case "settings":
         return <HabitSettingsTab />;
