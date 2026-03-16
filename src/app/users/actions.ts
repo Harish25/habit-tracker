@@ -3,6 +3,15 @@
 import db from '@/lib/db' 
 import bcrypt from 'bcrypt'
 import { redirect } from 'next/navigation'
+import { SignJWT } from 'jose' 
+import { cookies } from 'next/headers' 
+
+// Helper to get the secret key
+const getJwtSecretKey = () => {
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET is not set')
+  return new TextEncoder().encode(secret)
+}
 
 export async function registerUser(prevState: any, formData: FormData) {
   const username = formData.get('username') as string
@@ -37,10 +46,35 @@ export async function loginUser(prevState: any, formData: FormData) {
     const isMatch = await bcrypt.compare(password, user.passwordHash)
     if (!isMatch) return { error: "Invalid email or password." }
 
-    // Logic for sessions/cookies goes here
+    // 3. GENERATE THE JWT TOKEN
+    const token = await new SignJWT({ userId: user.id })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d') // Session lasts 7 days
+      .sign(getJwtSecretKey())
+
+    // 4. SET THE COOKIE
+    const cookieStore = await cookies()
+    cookieStore.set('session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
+    })
+
   } catch (error: any) {
-    if (error.message === 'NEXT_REDIRECT') throw error
+ 
+    if (error.digest?.includes('NEXT_REDIRECT')) throw error
     return { error: "Login failed." }
   }
+
+
   redirect('/dashboard')
+}
+
+export async function logoutUser() {
+  const cookieStore = await cookies()
+  cookieStore.delete('session')
+  redirect('/users/login')
 }
