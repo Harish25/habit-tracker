@@ -12,9 +12,10 @@ interface HabitTrackerProps {
   habit: { id: number; name: string; description: string; isGroup: boolean };
   streakData: { personal: number; group: number };
   notifications: { id: number; user: string; action: string; time: string }[];
+  userId: number; // Added userId to interface
 }
 
-export default function HabitTracker({ habit, streakData, notifications }: HabitTrackerProps) {
+export default function HabitTracker({ habit, streakData, notifications, userId }: HabitTrackerProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
 
   const renderTabContent = () => {
@@ -29,7 +30,8 @@ export default function HabitTracker({ habit, streakData, notifications }: Habit
       case "updates":
         return <HabitUpdatesTab notifications={notifications} />;
       case "logging":
-        return <HabitLoggingTab habitId={habit.id} />;
+        // Pass both habitId and userId to the logging tab
+        return <HabitLoggingTab habitId={habit.id} userId={userId} />;
       case "settings":
         return <HabitSettingsTab />;
       default:

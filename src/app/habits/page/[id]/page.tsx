@@ -1,15 +1,10 @@
 import { notFound, redirect } from "next/navigation"; 
 import HabitTracker from "@/components/habits/HabitTracker";
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from "../../../../generated/prisma/client";
+import db from "@/lib/db";
 import { getSession } from "@/lib/session";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
 export default async function HabitDynamicPage({ params }: { params: Promise<{ id: string }> }) {
+  // 1. Resolve Params for the dynamic ID
   const resolvedParams = await params;
   const habitId = parseInt(resolvedParams.id, 10);
 
@@ -17,20 +12,18 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  // --- SESSION LOGIC ---
+  // 2. Authentication Logic
   const session = await getSession();
   
-  // If there is no active session, send them to the login page immediately
+  // If no session, redirect to login
   if (!session) {
     redirect('/users/login');
   }
 
-  // Use the real ID from the verified cookie
   const currentUserId = session.userId;
-  // ---------------------
 
-  // Fetch habit details
-  const habit = await prisma.habit.findUnique({
+  // 3. Fetch Habit Details
+  const habit = await db.habit.findUnique({
     where: { id: habitId },
   });
 
@@ -38,21 +31,20 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  // Fetch individual streak
-  const personalStreak = await prisma.streak.findUnique({
+  // 4. Fetch Personal and Group Streaks
+  const personalStreak = await db.streak.findUnique({
     where: { habitId_userId: { habitId, userId: currentUserId } },
   });
 
-  // Fetch group streak (where userId is null)
   let groupStreak = null;
   if (habit.isGroup) {
-    groupStreak = await prisma.streak.findFirst({
+    groupStreak = await db.streak.findFirst({
       where: { habitId, userId: null },
     });
   }
 
-  // Placeholder: fetch recent notifications, need to update with Pusher
-  const notifications = await prisma.notification.findMany({
+  // 5. Fetch Recent Notifications
+  const notifications = await db.notification.findMany({
     where: { habitId },
     include: {
       user: {
@@ -63,14 +55,7 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     take: 10,
   });
 
-  // Format notifications for component
-  const formattedNotifications = notifications.map(n => ({
-    id: n.id,
-    user: n.user.username,
-    action: n.message.replace(n.user.username, '').trim(),
-    time: formatTimeAgo(n.createdAt)
-  }));
-
+  // Helper function for time formatting
   function formatTimeAgo(date: Date) {
     const diffInHours = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 60 * 60));
     if (diffInHours < 1) return "Just now";
@@ -78,6 +63,13 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
   }
+
+  const formattedNotifications = notifications.map(n => ({
+    id: n.id,
+    user: n.user.username,
+    action: n.message.replace(n.user.username, '').trim(),
+    time: formatTimeAgo(n.createdAt)
+  }));
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -94,6 +86,7 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
              group: groupStreak?.currentStreak || 0
            }}
            notifications={formattedNotifications}
+           userId={currentUserId} 
         />
       </div>
     </main>
