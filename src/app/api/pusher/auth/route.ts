@@ -1,4 +1,5 @@
 import { pusherServer } from "@/lib/pusherServer";
+import { getSession } from "@/lib/session";
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from "../../../../generated/prisma/client";
@@ -17,6 +18,13 @@ export async function POST(req: Request) {
     return new Response("Missing socket_id or channel_name", { status: 400 });
   }
 
+  // Authenticate the user via session cookie
+  const session = await getSession();
+  if (!session) {
+    return new Response("Unauthorized: not logged in", { status: 403 });
+  }
+  const userId = session.userId;
+
   // Channel format: private-habitNotify-{habitId}
   const match = channelName.match(/^private-habitNotify-(\d+)$/);
   if (!match) {
@@ -24,7 +32,6 @@ export async function POST(req: Request) {
   }
 
   const habitId = parseInt(match[1], 10);
-  const userId = 1; // Hardcoded userID, update from session later
 
   try {
     const habit = await prisma.habit.findUnique({
@@ -38,7 +45,7 @@ export async function POST(req: Request) {
 
     const isMember = (habit.creatorId === userId) || habit.members.some((m: { userId: number }) => m.userId === userId);
     
-    if (!isMember) {  // User not auth, can't access channel
+    if (!isMember) {  // User not a member, deny channel access
       return new Response("Unauthorized", { status: 403 });
     }
 
