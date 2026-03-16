@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
-import Pusher from "pusher-js";
 
 interface Notification {
   id: number;
@@ -12,44 +10,10 @@ interface Notification {
 }
 
 interface HabitUpdatesTabProps {
-  habitId: number;
-  initialNotifications: Notification[];
-  pusherKey: string;
-  pusherCluster: string;
+  notifications: Notification[];
 }
 
-export default function HabitUpdatesTab({ 
-  habitId, 
-  initialNotifications, 
-  pusherKey, 
-  pusherCluster 
-}: HabitUpdatesTabProps) {
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-
-  useEffect(() => {
-    if (!pusherKey || !pusherCluster) return;
-
-    const pusher = new Pusher(pusherKey, {
-      cluster: pusherCluster,
-      authEndpoint: "/api/pusher/auth",
-    });
-
-    const channelName = `private-habitNotify-${habitId}`;
-    const channel = pusher.subscribe(channelName);
-
-    channel.bind("new-notification", (data: Notification) => {
-      setNotifications(prev => {
-        // Prevent duplicate notifications
-        if (prev.some(n => n.id === data.id)) return prev;
-        return [data, ...prev];
-      });
-    });
-
-    return () => {
-      pusher.unsubscribe(channelName);
-      pusher.disconnect();
-    };
-  }, [habitId, pusherKey, pusherCluster]);
+export default function HabitUpdatesTab({ notifications }: HabitUpdatesTabProps) {
 
   return (
     <div className="space-y-4">
