@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { logHabitEntry } from "@/app/habits/page/[id]/actions";
+import { logHabit } from "@/app/habits/actions";
 
 interface HabitLoggingTabProps {
   habitId: number;
+  userId: number;
 }
 
-export default function HabitLoggingTab({ habitId }: HabitLoggingTabProps) {
+export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProps) {
   const [notes, setNotes] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,23 +23,23 @@ export default function HabitLoggingTab({ habitId }: HabitLoggingTabProps) {
     }
     
     setError("");
+    setIsSubmitting(true);
     
     try {
-      const result = await logHabitEntry(habitId, notes);
+      const formData = new FormData();
+      formData.append("notes", notes);
       
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
+      await logHabit(formData, userId, habitId);
       
       setIsSubmitted(true);
-      // Reset after success msg
+      setNotes("");
       setTimeout(() => {
         setIsSubmitted(false);
-        setNotes("");
-      }, 2000);
-    } catch {
-      setError("An unexpected error occurred.");
+      }, 3000);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -59,7 +61,7 @@ export default function HabitLoggingTab({ habitId }: HabitLoggingTabProps) {
               setNotes(e.target.value);
               if (error && e.target.value.trim()) setError("");
             }}
-            className={`w-full rounded-md border text-sm p-3 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent ${
+            className={`w-full rounded-md border text-sm p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
               error ? "border-red-300 bg-red-50" : "border-gray-200 bg-white"
             }`}
             placeholder="E.g., Ran 5km around the park. Felt great!"
@@ -69,16 +71,18 @@ export default function HabitLoggingTab({ habitId }: HabitLoggingTabProps) {
 
         <button
           type="submit"
-          disabled={isSubmitted}
-          className={`w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${
-            isSubmitted ? "bg-green-600 hover:bg-green-700" : "bg-black hover:bg-gray-800"
-          }`}
+          disabled={isSubmitted || isSubmitting}
+          className={`w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+            isSubmitted ? "bg-green-600 hover:bg-green-700" : "bg-indigo-600 hover:bg-indigo-700"
+          } disabled:opacity-50`}
         >
           {isSubmitted ? (
             <>
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Logged successfully
             </>
+          ) : isSubmitting ? (
+            "Logging..."
           ) : (
             "Log Habit"
           )}
