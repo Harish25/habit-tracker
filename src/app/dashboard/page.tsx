@@ -14,6 +14,7 @@ export default async function DashboardPage() {
 
   if (!session) {
     redirect("/users/login");
+    return;
   }
 
   const currentUserId = session.userId;
