@@ -4,6 +4,8 @@ interface HabitCardProps {
     name: string;
     description: string | null;
     isGroup: boolean;
+    frequencyCount: number;
+    frequencyPeriod: any; // Using any to avoid enum type issues in props for now
   };
   isSelected?: boolean;
   onClick?: () => void;
@@ -29,7 +31,15 @@ export default function HabitCard({ habit, isSelected, onClick }: HabitCardProps
           </span>
         )}
       </div>
-      <p className="text-gray-500 text-sm line-clamp-1">{habit.description || "No description"}</p>
+      <div className="flex justify-between items-center mb-1">
+        <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+          {habit.frequencyCount}x {habit.frequencyPeriod.toLowerCase()}
+        </p>
+        <div className="flex -space-x-1">
+          {/* Members could go here */}
+        </div>
+      </div>
+      <p className="text-gray-600 text-sm line-clamp-2 min-h-[2.5rem] mb-3">{habit.description || "No description provided."}</p>
     </div>
   );
 }
