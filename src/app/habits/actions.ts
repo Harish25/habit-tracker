@@ -3,6 +3,7 @@
 import db from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { FrequencyPeriod, MembershipStatus } from "@prisma/client";
 
 const s3Client = new S3Client({
   forcePathStyle: false, 
@@ -13,8 +14,6 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.DO_SPACES_SECRET!,
   }
 });
-
-import { FrequencyPeriod, MembershipStatus } from "@prisma/client";
 
 export async function createHabit(
   userId: number, 
@@ -118,7 +117,6 @@ export async function logHabit(formData: FormData, userId: number, habitId: numb
   if (file && file.size > 0) {
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
-      
       const fileKey = `users/${userId}/habits/${habitId}/${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
 
       await s3Client.send(new PutObjectCommand({
@@ -145,7 +143,6 @@ export async function logHabit(formData: FormData, userId: number, habitId: numb
     },
   });
 
-  // Update Streak Logic
   const habit = await db.habit.findUnique({ where: { id: habitId } });
   if (habit) {
     const now = new Date();
@@ -155,7 +152,7 @@ export async function logHabit(formData: FormData, userId: number, habitId: numb
       startDate.setHours(0, 0, 0, 0);
     } else if (habit.frequencyPeriod === FrequencyPeriod.WEEK) {
       const day = startDate.getDay();
-      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
       startDate.setDate(diff);
       startDate.setHours(0, 0, 0, 0);
     } else if (habit.frequencyPeriod === FrequencyPeriod.MONTH) {
@@ -175,7 +172,6 @@ export async function logHabit(formData: FormData, userId: number, habitId: numb
     });
 
     if (logCount === habit.frequencyCount) {
-      // Goal reached for this period! Update streak.
       const streak = await db.streak.findUnique({
         where: { habitId_userId: { habitId, userId } }
       });

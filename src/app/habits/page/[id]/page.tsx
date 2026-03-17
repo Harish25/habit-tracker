@@ -1,9 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation"; 
 import HabitTracker from "@/components/habits/HabitTracker";
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, FrequencyPeriod } from "@prisma/client";
 import db from "@/lib/db";
+import { getSession } from "@/lib/session";
 
 export default async function HabitDynamicPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -12,6 +10,14 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
   if (isNaN(habitId)) {
     notFound();
   }
+
+  const session = await getSession();
+  
+  if (!session) {
+    redirect('/users/login');
+  }
+
+  const currentUserId = session.userId;
 
   const habit = await db.habit.findUnique({
     where: { id: habitId },
@@ -29,8 +35,6 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
   if (!habit) {
     notFound();
   }
-
-  const currentUserId = 1;
 
   const personalStreak = await db.streak.findUnique({
     where: { habitId_userId: { habitId, userId: currentUserId } },
@@ -54,13 +58,6 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     take: 10,
   });
 
-  const formattedNotifications = notifications.map(n => ({
-    id: n.id,
-    user: n.user.username,
-    action: n.message.replace(n.user.username, '').trim(),
-    time: formatTimeAgo(n.createdAt)
-  }));
-
   function formatTimeAgo(date: Date) {
     const diffInHours = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 60 * 60));
     if (diffInHours < 1) return "Just now";
@@ -68,6 +65,13 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
   }
+
+  const formattedNotifications = notifications.map(n => ({
+    id: n.id,
+    user: n.user.username,
+    action: n.message.replace(n.user.username, '').trim(),
+    time: formatTimeAgo(n.createdAt)
+  }));
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -94,7 +98,7 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
            notifications={formattedNotifications}
            pusherKey={process.env.PUSHER_KEY || ""}
            pusherCluster={process.env.PUSHER_CLUSTER || ""}
-           userId={currentUserId}
+           userId={currentUserId} 
         />
       </div>
     </main>
