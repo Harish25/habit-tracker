@@ -1,7 +1,16 @@
+"use client";
+
 import { Bell } from "lucide-react";
 
+interface Notification {
+  id: number;
+  user: string;
+  action: string;
+  time: string;
+}
+
 interface HabitUpdatesTabProps {
-  notifications: { id: number; user: string; action: string; time: string }[];
+  notifications: Notification[];
 }
 
 export default function HabitUpdatesTab({ notifications }: HabitUpdatesTabProps) {
@@ -21,7 +30,7 @@ export default function HabitUpdatesTab({ notifications }: HabitUpdatesTabProps)
                 <Bell className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-sm text-gray-800">
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">
                   <span className="font-semibold">{notification.user}</span> {notification.action}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">{notification.time}</p>

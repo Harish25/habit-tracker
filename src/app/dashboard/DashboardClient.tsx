@@ -12,7 +12,7 @@ interface Habit {
   description: string | null;
   isGroup: boolean;
   frequencyCount: number;
-  frequencyPeriod: any; // Consider a more specific type if known, e.g., 'day' | 'week' | 'month'
+  frequencyPeriod: any;
 }
 
 interface DashboardClientProps {
