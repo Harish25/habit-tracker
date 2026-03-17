@@ -2,20 +2,20 @@
 
 import { useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { logHabitEntry } from "@/app/habits/page/[id]/actions";
+import { logHabit } from "@/app/habits/actions";
 import UploadButton from "@/components/uploadButton";
 
 interface HabitLoggingTabProps {
   habitId: number;
-  userId?: number; // temp -not used by logHabitEntry
+  userId: number;
 }
 
 export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProps) {
   const [notes, setNotes] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isPending, setIsPending] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,9 +26,8 @@ export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProp
     }
     
     setError("");
-    setIsPending(true);
+    setIsSubmitting(true);
     
-    // Create FormData to bundle note with file
     const formData = new FormData();
     formData.append("notes", notes);
     if (selectedFile) {
@@ -36,26 +35,18 @@ export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProp
     }
 
     try {
-      // logHabitEntry saves the log, creates notification, and triggers Pusher
-      const result = await logHabitEntry(habitId, notes);
-      if (!result.success) {
-        setError(result.error || "Failed to log habit.");
-        setIsPending(false);
-        return;
-      }
+      await logHabit(formData, userId, habitId);
       
       setIsSubmitted(true);
-      setIsPending(false);
-      
-      // Reset after success
+      setNotes("");
+      setSelectedFile(null);
       setTimeout(() => {
         setIsSubmitted(false);
-        setNotes("");
-        setSelectedFile(null);
-      }, 2000);
-    } catch (err) {
-      setIsPending(false);
-      setError("Failed to upload image or save log. Please try again.");
+      }, 3000);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -74,14 +65,14 @@ export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProp
             id="notes"
             rows={4}
             value={notes}
-            disabled={isPending}
+            disabled={isSubmitting}
             onChange={(e) => {
               setNotes(e.target.value);
               if (error && e.target.value.trim()) setError("");
             }}
-            className={`w-full rounded-md border text-sm p-3 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all ${
+            className={`w-full rounded-md border text-sm p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${
               error ? "border-red-300 bg-red-50" : "border-gray-200 bg-white"
-            } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+            } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
             placeholder="E.g., Ran 5km around the park. Felt great!"
           />
           {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
@@ -94,17 +85,15 @@ export default function HabitLoggingTab({ habitId, userId }: HabitLoggingTabProp
 
         <button
           type="submit"
-          disabled={isPending || isSubmitted}
-          className={`w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${
-            isSubmitted 
-              ? "bg-green-600 hover:bg-green-700" 
-              : "bg-black hover:bg-gray-800 disabled:bg-gray-400"
-          }`}
+          disabled={isSubmitted || isSubmitting}
+          className={`w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+            isSubmitted ? "bg-green-600 hover:bg-green-700" : "bg-indigo-600 hover:bg-indigo-700"
+          } disabled:opacity-50`}
         >
-          {isPending ? (
+          {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Uploading to Space...
+              Logging...
             </>
           ) : isSubmitted ? (
             <>

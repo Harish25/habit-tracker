@@ -1,23 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from "../../../../generated/prisma/client";
+import db from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { pusherServer } from "@/lib/pusherServer";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
-/**
- * Logs a habit completion entry for the current user.
- * Validates session, membership, and updates streaks/notifications.
- */
 export async function logHabitEntry(habitId: number, notes: string) {
   try {
-    // 1. Authenticate the user via the session cookie
     const session = await getSession();
 
     if (!session) {
@@ -26,8 +15,7 @@ export async function logHabitEntry(habitId: number, notes: string) {
 
     const userId = session.userId;
 
-    // 2. Fetch habit and check membership permissions
-    const habit = await prisma.habit.findUnique({
+    const habit = await db.habit.findUnique({
       where: { id: habitId },
       include: {
         members: true
@@ -46,8 +34,7 @@ export async function logHabitEntry(habitId: number, notes: string) {
       throw new Error("You are not a member of this habit");
     }
 
-    // Create habit log DB entry
-    await prisma.habitLog.create({
+    await db.habitLog.create({
       data: {
         habitId,
         userId,
@@ -56,8 +43,7 @@ export async function logHabitEntry(habitId: number, notes: string) {
       },
     });
 
-    // 4. Update or Create the user's personal streak
-    const personalStreak = await prisma.streak.upsert({
+    const personalStreak = await db.streak.upsert({
       where: { habitId_userId: { habitId, userId } },
       update: {
         currentStreak: { increment: 1 },
@@ -72,20 +58,18 @@ export async function logHabitEntry(habitId: number, notes: string) {
       },
     });
     
-    // 5. Check and update longest streak record
     if (personalStreak.currentStreak > personalStreak.longestStreak) {
-      await prisma.streak.update({
+      await db.streak.update({
         where: { id: personalStreak.id },
         data: { longestStreak: personalStreak.currentStreak }
       });
     }
 
-    // 6. Create a notification for the feed
-    const user = await prisma.user.findUnique({ where: { id: userId }});
+    const user = await db.user.findUnique({ where: { id: userId }});
     const username = user?.username || 'Someone';
     const notificationMessage = `${username} has completed the habit!\nStreak Count: ${personalStreak.currentStreak}\nNote: ${notes}`;
     
-    const newNotification = await prisma.notification.create({
+    const newNotification = await db.notification.create({
       data: {
         userId,
         habitId,
@@ -93,7 +77,6 @@ export async function logHabitEntry(habitId: number, notes: string) {
       }
     });
 
-    // Broadcast notification to Pusher channel
     await pusherServer.trigger(`private-habitNotify-${habitId}`, "new-notification", {
       id: newNotification.id,
       user: username,
@@ -101,7 +84,6 @@ export async function logHabitEntry(habitId: number, notes: string) {
       time: "Just now"
     });
 
-    // Ensure new data shown
     revalidatePath(`/habits/page/${habitId}`);
     
     return { success: true };
