@@ -2,11 +2,8 @@ import { notFound } from "next/navigation";
 import HabitTracker from "@/components/habits/HabitTracker";
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from "../../../../generated/prisma/client";
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { PrismaClient, FrequencyPeriod } from "@prisma/client";
+import db from "@/lib/db";
 
 export default async function HabitDynamicPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -16,34 +13,37 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  // Fetch habit details
-  const habit = await prisma.habit.findUnique({
+  const habit = await db.habit.findUnique({
     where: { id: habitId },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, username: true, email: true }
+          }
+        }
+      }
+    }
   });
 
   if (!habit) {
     notFound();
   }
 
-  // Placeholder userId: 1
-  // need to update to use actual user ID from session
   const currentUserId = 1;
 
-  // Fetch individual streak
-  const personalStreak = await prisma.streak.findUnique({
+  const personalStreak = await db.streak.findUnique({
     where: { habitId_userId: { habitId, userId: currentUserId } },
   });
 
-  // Fetch group streak (where userId is null)
   let groupStreak = null;
   if (habit.isGroup) {
-    groupStreak = await prisma.streak.findFirst({
+    groupStreak = await db.streak.findFirst({
       where: { habitId, userId: null },
     });
   }
 
-  // Placeholder: fetch recent notifications, need to update with Pusher
-  const notifications = await prisma.notification.findMany({
+  const notifications = await db.notification.findMany({
     where: { habitId },
     include: {
       user: {
@@ -54,7 +54,6 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     take: 10,
   });
 
-  // Format notifications for component
   const formattedNotifications = notifications.map(n => ({
     id: n.id,
     user: n.user.username,
@@ -78,13 +77,24 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
              id: habit.id,
              name: habit.name,
              description: habit.description || "",
-             isGroup: habit.isGroup
+             isGroup: habit.isGroup,
+             frequencyCount: habit.frequencyCount,
+             frequencyPeriod: habit.frequencyPeriod
            }}
+           members={habit.members.map(m => ({
+             userId: m.userId,
+             username: m.user.username,
+             email: m.user.email,
+             status: m.status
+           }))}
            streakData={{
              personal: personalStreak?.currentStreak || 0,
              group: groupStreak?.currentStreak || 0
            }}
            notifications={formattedNotifications}
+           pusherKey={process.env.PUSHER_KEY || ""}
+           pusherCluster={process.env.PUSHER_CLUSTER || ""}
+           userId={currentUserId}
         />
       </div>
     </main>
