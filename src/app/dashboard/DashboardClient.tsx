@@ -6,9 +6,18 @@ import PendingRequests from "@/components/PendingRequests";
 import HabitTracker from "@/components/habits/HabitTracker";
 import { getHabitDetails } from "@/app/habits/actions";
 
+interface Habit {
+  id: number;
+  name: string;
+  description: string | null;
+  isGroup: boolean;
+  frequencyCount: number;
+  frequencyPeriod: any; // Consider a more specific type if known, e.g., 'day' | 'week' | 'month'
+}
+
 interface DashboardClientProps {
   userId: number;
-  habits: any[];
+  habits: Habit[];
   pendingInvitations: any[];
   pusherKey: string;
   pusherCluster: string;
