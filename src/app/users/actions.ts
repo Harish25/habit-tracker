@@ -3,7 +3,7 @@
 import db from '@/lib/db' 
 import bcrypt from 'bcrypt'
 import { redirect } from 'next/navigation'
-import { SignJWT } from 'jose' 
+import { SignJWT, jwtVerify } from 'jose' 
 import { cookies } from 'next/headers' 
 
 // Helper to get the secret key
@@ -77,4 +77,17 @@ export async function logoutUser() {
   const cookieStore = await cookies()
   cookieStore.delete('session')
   redirect('/users/login')
+}
+
+export async function getCurrentUser() {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('session')?.value
+    if (!token) return null
+
+    const { payload } = await jwtVerify(token, getJwtSecretKey())
+    return await db.user.findUnique({ where: { id: payload.userId as number } })
+  } catch (error) {
+    return null
+  }
 }

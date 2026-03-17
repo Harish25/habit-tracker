@@ -1,21 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-enum FriendshipStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
 }
 
 model User {
@@ -23,59 +11,43 @@ model User {
   username         String         @db.VarChar(255)
   email            String         @unique @db.VarChar(255)
   passwordHash     String         @map("password_hash") @db.VarChar(255)
-  profileImageUrl  String?        @map("profile_image_url") @db.Text
+  profileImageUrl  String?        @map("profile_image_url")
   createdAt        DateTime       @default(now()) @map("created_at")
-  
-  // Relations
-  habitsCreated    Habit[]        @relation("HabitCreator")
-  habitMemberships HabitMember[]
   habitLogs        HabitLog[]
-  streaks          Streak[]
+  habitMemberships HabitMember[]
+  habitsCreated    Habit[]        @relation("HabitCreator")
   notifications    Notification[]
-  friendRequestsSent     Friendship[] @relation("Requester")
-  friendRequestsReceived Friendship[] @relation("Receiver")
+  streaks          Streak[]
 
   @@map("users")
 }
 
-model Friendship {
-  id          Int              @id @default(autoincrement())
-  requesterId Int              @map("requester_id")
-  receiverId  Int              @map("receiver_id")
-  status      FriendshipStatus @default(PENDING)
-
-  requester   User             @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
-  receiver    User             @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
-
-  @@unique([requesterId, receiverId])
-  @@map("friendships")
-}
-
 model Habit {
-  id          Int           @id @default(autoincrement())
-  name        String        @db.VarChar(255)
-  description String?       @db.Text
-  creatorId   Int?          @map("creator_id")
-  isGroup     Boolean       @default(false) @map("is_group")
-  createdAt   DateTime      @default(now()) @map("created_at")
-
-  creator     User?         @relation("HabitCreator", fields: [creatorId], references: [id], onDelete: SetNull)
-  members     HabitMember[]
-  logs        HabitLog[]
-  streaks     Streak[]
-  notifications Notification[]
+  id              Int             @id @default(autoincrement())
+  name            String          @db.VarChar(255)
+  description     String?
+  creatorId       Int?            @map("creator_id")
+  isGroup         Boolean         @default(false) @map("is_group")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  frequencyCount  Int             @default(1) @map("frequency_count")
+  frequencyPeriod FrequencyPeriod @default(DAY) @map("frequency_period")
+  logs            HabitLog[]
+  members         HabitMember[]
+  creator         User?           @relation("HabitCreator", fields: [creatorId], references: [id])
+  notifications   Notification[]
+  streaks         Streak[]
 
   @@map("habits")
 }
 
 model HabitMember {
-  id       Int      @id @default(autoincrement())
-  habitId  Int      @map("habit_id")
-  userId   Int      @map("user_id")
-  joinedAt DateTime @default(now()) @map("joined_at")
-
-  habit    Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       Int              @id @default(autoincrement())
+  habitId  Int              @map("habit_id")
+  userId   Int              @map("user_id")
+  joinedAt DateTime         @default(now()) @map("joined_at")
+  status   MembershipStatus @default(ACCEPTED)
+  habit    Habit            @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([habitId, userId])
   @@map("habit_members")
@@ -86,10 +58,9 @@ model HabitLog {
   habitId       Int      @map("habit_id")
   userId        Int      @map("user_id")
   dateCompleted DateTime @map("date_completed") @db.Date
-  proofFileUrl  String?  @map("proof_file_url") @db.Text
-  notes         String   @db.Text
+  proofFileUrl  String?  @map("proof_file_url")
+  notes         String
   createdAt     DateTime @default(now()) @map("created_at")
-
   habit         Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -99,11 +70,10 @@ model HabitLog {
 model Streak {
   id                Int       @id @default(autoincrement())
   habitId           Int       @map("habit_id")
-  userId            Int?      @map("user_id") // Null for group-wide streaks
+  userId            Int?      @map("user_id")
   currentStreak     Int       @default(0) @map("current_streak")
   longestStreak     Int       @default(0) @map("longest_streak")
   lastCompletedDate DateTime? @map("last_completed_date") @db.Date
-
   habit             Habit     @relation(fields: [habitId], references: [id], onDelete: Cascade)
   user              User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -115,12 +85,28 @@ model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   habitId   Int      @map("habit_id")
-  message   String   @db.Text
+  message   String
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+enum MembershipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum FrequencyPeriod {
+  DAY
+  WEEK
+  MONTH
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
 }

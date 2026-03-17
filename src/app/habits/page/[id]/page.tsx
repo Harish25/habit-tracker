@@ -4,7 +4,6 @@ import db from "@/lib/db";
 import { getSession } from "@/lib/session";
 
 export default async function HabitDynamicPage({ params }: { params: Promise<{ id: string }> }) {
-  // 1. Resolve Params for the dynamic ID
   const resolvedParams = await params;
   const habitId = parseInt(resolvedParams.id, 10);
 
@@ -12,26 +11,31 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  // 2. Authentication Logic
   const session = await getSession();
   
-  // If no session, redirect to login
   if (!session) {
     redirect('/users/login');
   }
 
   const currentUserId = session.userId;
 
-  // 3. Fetch Habit Details
   const habit = await db.habit.findUnique({
     where: { id: habitId },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, username: true, email: true }
+          }
+        }
+      }
+    }
   });
 
   if (!habit) {
     notFound();
   }
 
-  // 4. Fetch Personal and Group Streaks
   const personalStreak = await db.streak.findUnique({
     where: { habitId_userId: { habitId, userId: currentUserId } },
   });
@@ -43,8 +47,7 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     });
   }
 
-  // Fetch old notifications from DB
-  const notifications = await prisma.notification.findMany({
+  const notifications = await db.notification.findMany({
     where: { habitId },
     include: {
       user: {
@@ -55,7 +58,6 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
     take: 10,
   });
 
-  // Helper function for time formatting
   function formatTimeAgo(date: Date) {
     const diffInHours = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 60 * 60));
     if (diffInHours < 1) return "Just now";
@@ -79,8 +81,16 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
              id: habit.id,
              name: habit.name,
              description: habit.description || "",
-             isGroup: habit.isGroup
+             isGroup: habit.isGroup,
+             frequencyCount: habit.frequencyCount,
+             frequencyPeriod: habit.frequencyPeriod
            }}
+           members={habit.members.map(m => ({
+             userId: m.userId,
+             username: m.user.username,
+             email: m.user.email,
+             status: m.status
+           }))}
            streakData={{
              personal: personalStreak?.currentStreak || 0,
              group: groupStreak?.currentStreak || 0

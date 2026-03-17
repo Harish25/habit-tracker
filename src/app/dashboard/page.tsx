@@ -1,69 +1,74 @@
 import db from "@/lib/db";
-import HabitCard from "@/components/HabitCard";
+import DashboardClient from "./DashboardClient";
+import { MembershipStatus } from "@prisma/client";
+import AddHabitButton from "@/components/AddHabitButton";
 import FriendsList from "@/components/FriendsList";
-import PendingRequests from "@/components/PendingRequests";
-import AddHabitButton from "@/components/AddHabitButton"; 
-import LogoutButton from "@/components/logoutButton"; 
-import { getSession } from "@/lib/session"; 
-import { redirect } from "next/navigation"; 
+import LogoutButton from "@/components/logoutButton";
+import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
-export default async function Dashboard() {
-
+export default async function DashboardPage() {
   const session = await getSession();
 
   if (!session) {
-    redirect('/users/login');
+    redirect("/users/login");
+    return;
   }
 
   const currentUserId = session.userId;
 
-  const habitMembers = await db.habitMember.findMany({
-    where: { userId: currentUserId }
+  const habits = await db.habit.findMany({
+    where: {
+      OR: [
+        { creatorId: currentUserId },
+        {
+          members: {
+            some: {
+              userId: currentUserId,
+              status: MembershipStatus.ACCEPTED
+            }
+          }
+        }
+      ]
+    },
+    orderBy: { createdAt: 'desc' }
   });
 
-  const habitIds = habitMembers.map((hm) => hm.habitId);
-
-  const habits = await db.habit.findMany({
-    where: { id: { in: habitIds } }
+  const pendingInvitations = await db.habitMember.findMany({
+    where: {
+      userId: currentUserId,
+      status: MembershipStatus.PENDING
+    },
+    include: {
+      habit: true
+    }
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <div className="lg:col-span-8 space-y-6">
-          <header className="flex justify-between items-center">
-            <h1 className="text-3xl font-black text-gray-900">My Daily Habits</h1>
-            
-            {/* Grouping Logout and Add Habit buttons together */}
-            <div className="flex items-center gap-3">
-              <LogoutButton />
-              <AddHabitButton userId={currentUserId} />
-            </div>
-          </header>
-
-          <PendingRequests userId={currentUserId} />
-
-          <div className="grid grid-cols-1 gap-4">
-            {habits.length === 0 ? (
-              <div className="p-12 border-2 border-dashed rounded-2xl text-center text-gray-400">
-                No habits yet. Click the button above to start your journey!
-              </div>
-            ) : (
-              habits.map(h => (
-                <HabitCard key={h.id} habit={h} userId={currentUserId} />
-              ))
-            )}
+    <main className="min-h-screen bg-gray-50/50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight">Dashboard</h1>
+            <p className="text-gray-500 font-medium">Welcome back! Here&apos;s your habit progress.</p>
           </div>
-        </div>
+          <div className="flex items-center gap-3">
+            <FriendsList userId={currentUserId} />
+            <LogoutButton />
+            <AddHabitButton userId={currentUserId} />
+          </div>
+        </header>
 
-        <div className="lg:col-span-4 space-y-6">
-          <FriendsList userId={currentUserId} />
-        </div>
-
+        <DashboardClient
+          userId={currentUserId}
+          habits={habits}
+          pendingInvitations={pendingInvitations}
+          pusherKey={process.env.PUSHER_KEY || ""}
+          pusherCluster={process.env.PUSHER_CLUSTER || ""}
+        />
       </div>
-    </div>
+    </main>
   );
 }
