@@ -145,6 +145,82 @@ export async function logHabit(formData: FormData, userId: number, habitId: numb
     },
   });
 
+  // Update Streak Logic
+  const habit = await db.habit.findUnique({ where: { id: habitId } });
+  if (habit) {
+    const now = new Date();
+    let startDate = new Date();
+    
+    if (habit.frequencyPeriod === FrequencyPeriod.DAY) {
+      startDate.setHours(0, 0, 0, 0);
+    } else if (habit.frequencyPeriod === FrequencyPeriod.WEEK) {
+      const day = startDate.getDay();
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+      startDate.setDate(diff);
+      startDate.setHours(0, 0, 0, 0);
+    } else if (habit.frequencyPeriod === FrequencyPeriod.MONTH) {
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    const logCount = await db.habitLog.count({
+      where: {
+        habitId: habitId,
+        userId: userId,
+        dateCompleted: {
+          gte: startDate,
+          lte: now
+        }
+      }
+    });
+
+    if (logCount === habit.frequencyCount) {
+      // Goal reached for this period! Update streak.
+      const streak = await db.streak.findUnique({
+        where: { habitId_userId: { habitId, userId } }
+      });
+
+      if (!streak) {
+        await db.streak.create({
+          data: {
+            habitId,
+            userId,
+            currentStreak: 1,
+            longestStreak: 1,
+            lastCompletedDate: now
+          }
+        });
+      } else {
+        const lastCompleted = streak.lastCompletedDate ? new Date(streak.lastCompletedDate) : null;
+        let isConsecutive = false;
+
+        if (lastCompleted) {
+          const prevPeriodStart = new Date(startDate);
+          if (habit.frequencyPeriod === FrequencyPeriod.DAY) {
+            prevPeriodStart.setDate(prevPeriodStart.getDate() - 1);
+          } else if (habit.frequencyPeriod === FrequencyPeriod.WEEK) {
+            prevPeriodStart.setDate(prevPeriodStart.getDate() - 7);
+          } else if (habit.frequencyPeriod === FrequencyPeriod.MONTH) {
+            prevPeriodStart.setMonth(prevPeriodStart.getMonth() - 1);
+          }
+          isConsecutive = lastCompleted >= prevPeriodStart;
+        } else {
+          isConsecutive = true;
+        }
+
+        const newStreak = isConsecutive ? (streak.currentStreak + 1) : 1;
+        await db.streak.update({
+          where: { id: streak.id },
+          data: {
+            currentStreak: newStreak,
+            longestStreak: Math.max(newStreak, streak.longestStreak),
+            lastCompletedDate: now
+          }
+        });
+      }
+    }
+  }
+
   revalidatePath("/dashboard");
   revalidatePath(`/habits/${habitId}`);
 }

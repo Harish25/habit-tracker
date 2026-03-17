@@ -1,19 +1,33 @@
 import db from "@/lib/db";
 import DashboardClient from "./DashboardClient";
 import { MembershipStatus } from "@prisma/client";
+import AddHabitButton from "@/components/AddHabitButton";
+
+import { getCurrentUser } from "@/app/users/actions";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
-  // Placeholder userId: 1 (should be replaced with actual auth session later)
-  const currentUserId = 1;
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    redirect("/users/login");
+  }
+
+  const currentUserId = user.id;
 
   const habits = await db.habit.findMany({
     where: {
-      members: {
-        some: {
-          userId: currentUserId,
-          status: MembershipStatus.ACCEPTED
+      OR: [
+        { creatorId: currentUserId },
+        { 
+          members: {
+            some: {
+              userId: currentUserId,
+              status: MembershipStatus.ACCEPTED
+            }
+          }
         }
-      }
+      ]
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -36,9 +50,7 @@ export default async function DashboardPage() {
             <h1 className="text-4xl font-black text-gray-900 tracking-tight">Dashboard</h1>
             <p className="text-gray-500 font-medium">Welcome back! Here's your habit progress.</p>
           </div>
-          <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 w-full md:w-auto">
-            + New Habit
-          </button>
+            <AddHabitButton userId={currentUserId} />
         </header>
 
         <DashboardClient 
