@@ -23,7 +23,7 @@ interface HabitTrackerProps {
   };
   members: { userId: number; username: string; email: string; status: string }[];
   streakData: { personal: number; group: number };
-  notifications: { id: number; user: string; action: string; time: string }[];
+  notifications: { id: number; user: string; action: string; time: string; proofFileUrl?: string | null }[];
   pusherKey: string;
   pusherCluster: string;
   userId: number;
@@ -54,7 +54,7 @@ export default function HabitTracker({
     const channelName = `private-habitNotify-${habit.id}`;
     const channel = pusher.subscribe(channelName);
 
-    channel.bind("new-notification", (data: { id: number; user: string; action: string; time: string }) => {
+    channel.bind("new-notification", (data: { id: number; user: string; action: string; time: string; proofFileUrl?: string | null }) => {
       setLiveNotifications(prev => {
         if (prev.some(n => n.id === data.id)) return prev;
         return [data, ...prev];
