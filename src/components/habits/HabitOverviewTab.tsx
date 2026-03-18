@@ -32,7 +32,7 @@ export default function HabitOverviewTab({ habitDescription, personalStreak, gro
               <Users className="w-8 h-8 text-blue-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Group Best Streak</p>
+              <p className="text-sm font-medium text-gray-500">Current Group Streak</p>
               <div className="flex items-baseline space-x-2">
                 <span className="text-3xl font-bold text-gray-900">{groupStreak}</span>
                 <span className="text-sm text-gray-500">days</span>

@@ -285,6 +285,83 @@ export async function logHabit(formData: FormData, userId: number, habitId: numb
     currentStreakCount = existingStreak?.currentStreak || 0;
   }
 
+  // Group streak eval
+  if (habit.isGroup) {
+    const acceptedMembers = await db.habitMember.findMany({
+      where: { habitId, status: MembershipStatus.ACCEPTED },
+      select: { userId: true }
+    });
+
+    // Check if every member has met the frequency count
+    const memberLogCounts = await Promise.all(
+      acceptedMembers.map((member) =>
+        db.habitLog.count({
+          where: {
+            habitId,
+            userId: member.userId,
+            dateCompleted: { gte: startDate, lte: now }
+          }
+        })
+      )
+    );
+
+    const allMembersMet = memberLogCounts.every(
+      (count) => count >= habit.frequencyCount
+    );
+
+    if (allMembersMet) {
+      const groupStreak = await db.streak.findFirst({
+        where: { habitId, userId: null }
+      });
+
+      if (!groupStreak) {
+        await db.streak.create({
+          data: {
+            habitId,
+            userId: undefined,  // group streak uses null userId
+            currentStreak: 1,
+            longestStreak: 1,
+            lastCompletedDate: now
+          }
+        });
+      } else {
+        const lastCompleted = groupStreak.lastCompletedDate
+          ? new Date(groupStreak.lastCompletedDate)
+          : null;
+        let isConsecutive = false;
+
+        if (lastCompleted) {
+          const prevPeriodStart = new Date(startDate);
+          if (habit.frequencyPeriod === FrequencyPeriod.DAY) {
+            prevPeriodStart.setDate(prevPeriodStart.getDate() - 1);
+          } 
+          else if (habit.frequencyPeriod === FrequencyPeriod.WEEK) {
+            prevPeriodStart.setDate(prevPeriodStart.getDate() - 7);
+          } 
+          else if (habit.frequencyPeriod === FrequencyPeriod.MONTH) {
+            prevPeriodStart.setMonth(prevPeriodStart.getMonth() - 1);
+          }
+          
+          isConsecutive = lastCompleted >= prevPeriodStart;
+        } else {
+          isConsecutive = true;
+        }
+
+        const newGroupStreak = isConsecutive
+          ? groupStreak.currentStreak + 1
+          : 1;
+        await db.streak.update({
+          where: { id: groupStreak.id },
+          data: {
+            currentStreak: newGroupStreak,
+            longestStreak: Math.max(newGroupStreak, groupStreak.longestStreak),
+            lastCompletedDate: now
+          }
+        });
+      }
+    }
+  }
+
   // Create notification DB record
   const user = await db.user.findUnique({ where: { id: userId } });
   const username = user?.username || 'Someone';
