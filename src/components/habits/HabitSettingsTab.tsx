@@ -27,7 +27,7 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh }: 
       const frequencyPeriod = formData.get("frequencyPeriod") as FrequencyPeriod;
       const isGroup = formData.get("isGroup") === "true";
 
-      await updateHabit(habit.id, { name, description, frequencyCount, frequencyPeriod, isGroup });
+      await updateHabit(habit.id, userId, { name, description, frequencyCount, frequencyPeriod, isGroup });
       setIsEditing(false);
       if (onRefresh) onRefresh();
       return { message: "Updated!", error: false };
@@ -39,7 +39,7 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh }: 
   const [inviteState, inviteAction, isInviting] = useActionState(async (prevState: any, formData: FormData) => {
     try {
       const usernameOrEmail = formData.get("user") as string;
-      await inviteUserToHabit(habit.id, usernameOrEmail);
+      await inviteUserToHabit(habit.id, userId, usernameOrEmail);
       return { message: "Invitation sent!", error: false };
     } catch (e: any) {
       return { message: e.message, error: true };

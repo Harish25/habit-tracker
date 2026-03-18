@@ -1,12 +1,13 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, Download } from "lucide-react";
 
 interface Notification {
   id: number;
   user: string;
   action: string;
   time: string;
+  proofFileUrl?: string | null;
 }
 
 interface HabitUpdatesTabProps {
@@ -29,11 +30,33 @@ export default function HabitUpdatesTab({ notifications }: HabitUpdatesTabProps)
               <div className="bg-white p-2 text-gray-400 rounded-full shadow-sm">
                 <Bell className="w-4 h-4" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-800 whitespace-pre-wrap">
                   <span className="font-semibold">{notification.user}</span> {notification.action}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">{notification.time}</p>
+
+                {notification.proofFileUrl && (
+                  <div className="mt-2">
+                    <a href={notification.proofFileUrl} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={notification.proofFileUrl}
+                        alt="Proof"
+                        className="rounded-lg max-h-48 object-cover border border-gray-200"
+                      />
+                    </a>
+                    <a
+                      href={notification.proofFileUrl}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-1 text-xs text-indigo-600 hover:underline"
+                    >
+                      <Download className="w-3 h-3" />
+                      Download image
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -46,3 +69,4 @@ export default function HabitUpdatesTab({ notifications }: HabitUpdatesTabProps)
     </div>
   );
 }
+
