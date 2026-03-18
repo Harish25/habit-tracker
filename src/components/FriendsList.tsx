@@ -22,7 +22,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
     }
     startTransition(async () => {
       try {
-        await inviteUserToHabit(parseInt(habitId, 10), email);
+        await inviteUserToHabit(parseInt(habitId, 10), userId, email);
         setMessage({ text: "Invitation sent!", isError: false });
         setEmail("");
         setHabitId("");
