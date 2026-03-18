@@ -82,14 +82,15 @@ model Streak {
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  habitId   Int      @map("habit_id")
-  message   String
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
-  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  habitId      Int      @map("habit_id")
+  message      String
+  proofFileUrl String?  @map("proof_file_url")
+  isRead       Boolean  @default(false) @map("is_read")
+  createdAt    DateTime @default(now()) @map("created_at")
+  habit        Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
