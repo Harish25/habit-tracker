@@ -96,8 +96,8 @@ export default async function HabitDynamicPage({ params }: { params: Promise<{ i
              group: groupStreak?.currentStreak || 0
            }}
            notifications={formattedNotifications}
-           pusherKey={process.env.PUSHER_KEY || ""}
-           pusherCluster={process.env.PUSHER_CLUSTER || ""}
+           pusherKey={process.env.NEXT_PUBLIC_PUSHER_KEY || process.env.PUSHER_KEY || ""}
+           pusherCluster={process.env.NEXT_PUBLIC_PUSHER_CLUSTER || process.env.PUSHER_CLUSTER || ""}
            userId={currentUserId} 
         />
       </div>

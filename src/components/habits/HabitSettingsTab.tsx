@@ -165,7 +165,7 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh, on
               <div>
                 <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Type</p>
                 <p className="text-gray-900 font-medium">
-                  {habit.isGroup ? "👥 Group" : "👤 Personal"}
+                  {habit.isGroup ? "Group" : "Personal"}
                 </p>
               </div>
             </div>

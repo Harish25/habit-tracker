@@ -117,6 +117,7 @@ export default function DashboardClient({
               </div>
             ) : selectedHabitId && habitDetails ? (
               <HabitTracker
+                key={habitDetails.habit.id}
                 habit={habitDetails.habit}
                 members={habitDetails.members}
                 streakData={habitDetails.streakData}
@@ -129,7 +130,7 @@ export default function DashboardClient({
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 text-gray-400">
-                <div className="text-4xl mb-4 opacity-50">🖱️</div>
+                <div className="text-4xl mb-4 opacity-50"></div>
                 <p className="text-lg">Select a habit to view details</p>
               </div>
             )}

@@ -49,8 +49,8 @@ export default async function DashboardPage() {
       userId={currentUserId}
       habits={habits}
       pendingInvitations={pendingInvitations}
-      pusherKey={process.env.NEXT_PUBLIC_PUSHER_KEY || ""}
-      pusherCluster={process.env.NEXT_PUBLIC_PUSHER_CLUSTER || ""}
+      pusherKey={process.env.NEXT_PUBLIC_PUSHER_KEY || process.env.PUSHER_KEY || ""}
+      pusherCluster={process.env.NEXT_PUBLIC_PUSHER_CLUSTER || process.env.PUSHER_CLUSTER || ""}
     />
   );
 }
