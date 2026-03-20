@@ -28,6 +28,7 @@ interface HabitTrackerProps {
   pusherCluster: string;
   userId: number;
   onRefresh?: () => void;
+  onDelete?: (id: number) => void;
 }
 
 export default function HabitTracker({ 
@@ -38,7 +39,8 @@ export default function HabitTracker({
   pusherKey, 
   pusherCluster, 
   userId,
-  onRefresh
+  onRefresh,
+  onDelete
 }: HabitTrackerProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [liveNotifications, setLiveNotifications] = useState(initialNotifications);
@@ -126,6 +128,7 @@ export default function HabitTracker({
             members={members} 
             userId={userId} 
             onRefresh={onRefresh}
+            onDelete={onDelete}
           />
         )}
       </div>

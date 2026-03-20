@@ -5,7 +5,7 @@ interface HabitCardProps {
     description: string | null;
     isGroup: boolean;
     frequencyCount: number;
-    frequencyPeriod: any; // Using any to avoid enum type issues in props for now
+    frequencyPeriod: any;
   };
   isSelected?: boolean;
   onClick?: () => void;
@@ -25,21 +25,29 @@ export default function HabitCard({ habit, isSelected, onClick }: HabitCardProps
         <h3 className={`font-bold transition-colors ${isSelected ? "text-indigo-900" : "text-gray-900 group-hover:text-indigo-600"}`}>
           {habit.name}
         </h3>
-        {habit.isGroup && (
+        
+        {habit.isGroup ? (
           <span className="bg-blue-100 text-blue-700 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
             Group
           </span>
+        ) : (
+          <span className="bg-gray-100 text-gray-600 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
+            Personal
+          </span>
         )}
       </div>
+
       <div className="flex justify-between items-center mb-1">
         <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
           {habit.frequencyCount}x {habit.frequencyPeriod.toLowerCase()}
         </p>
         <div className="flex -space-x-1">
-          {/* Members could go here */}
         </div>
       </div>
-      <p className="text-gray-600 text-sm line-clamp-2 min-h-[2.5rem] mb-3">{habit.description || "No description provided."}</p>
+      
+      <p className="text-gray-600 text-sm line-clamp-2 min-h-[2.5rem] mb-3">
+        {habit.description || "No description provided."}
+      </p>
     </div>
   );
 }

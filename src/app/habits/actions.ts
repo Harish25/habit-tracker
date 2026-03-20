@@ -53,7 +53,6 @@ export async function updateHabit(
     description?: string; 
     frequencyCount?: number; 
     frequencyPeriod?: FrequencyPeriod; 
-    isGroup?: boolean 
   }
 ) {
   const habit = await db.habit.findUnique({
@@ -65,12 +64,12 @@ export async function updateHabit(
     throw new Error("Habit not found");
   }
 
-  const isMember =
-    (habit.creatorId === userId) ||
-    habit.members.some((m: { userId: number }) => m.userId === userId);
+  const isMember = habit.members.some(
+    (m) => m.userId === userId && m.status === MembershipStatus.ACCEPTED
+  );
 
   if (!isMember) {
-    throw new Error("You are not a member of this habit");
+    throw new Error("You are not an authorized member of this habit");
   }
 
   const updatedHabit = await db.habit.update({
@@ -79,8 +78,48 @@ export async function updateHabit(
   });
   
   revalidatePath("/dashboard");
+  revalidatePath(`/habits/${habitId}`);
   return updatedHabit;
 }
+
+export async function leaveHabit(habitId: number, userId: number) {
+  try {
+    await db.habitMember.delete({
+      where: {
+        habitId_userId: {
+          habitId: habitId,
+          userId: userId,
+        },
+      },
+    });
+
+    const remainingMembers = await db.habitMember.count({
+      where: { habitId: habitId },
+    });
+
+    //delete habit if no one left
+    if (remainingMembers === 0) {
+      await db.habit.delete({
+        where: { id: habitId },
+      });
+    } 
+    //habit becomes a personal habit if there's only one member
+    else if (remainingMembers === 1) {
+      await db.habit.update({
+        where: { id: habitId },
+        data: { isGroup: false }
+      });
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/habits/${habitId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Leave habit error:", error);
+    throw new Error("Failed to leave habit");
+  }
+}
+
 
 export async function inviteUserToHabit(habitId: number, userId: number, usernameOrEmail: string) {
   const habit = await db.habit.findUnique({
@@ -117,38 +156,54 @@ export async function inviteUserToHabit(habitId: number, userId: number, usernam
     where: {
       habitId_userId: { habitId, userId: userToInvite.id }
     },
-    update: {
-      status: MembershipStatus.PENDING
-    },
+    update: { status: MembershipStatus.PENDING },
     create: {
       habitId,
       userId: userToInvite.id,
       status: MembershipStatus.PENDING
     }
   });
-
+  
   revalidatePath("/dashboard");
+  revalidatePath(`/habits/${habitId}`);
   return invitation;
 }
 
+
 export async function respondToHabitInvitation(habitId: number, userId: number, status: MembershipStatus) {
-  await db.habitMember.update({
-    where: {
-      habitId_userId: { habitId, userId }
-    },
-    data: {
-      status: status
+  await db.$transaction(async (tx) => {
+    await tx.habitMember.update({
+      where: {
+        habitId_userId: { habitId, userId }
+      },
+      data: { status: status }
+    });
+
+    if (status === MembershipStatus.ACCEPTED) {
+      const acceptedCount = await tx.habitMember.count({
+        where: { 
+          habitId: habitId, 
+          status: MembershipStatus.ACCEPTED 
+        }
+      });
+
+      if (acceptedCount >= 2) {
+        await tx.habit.update({
+          where: { id: habitId },
+          data: { isGroup: true }
+        });
+      }
     }
   });
 
   revalidatePath("/dashboard");
+  revalidatePath(`/habits/${habitId}`);
 }
 
 export async function logHabit(formData: FormData, userId: number, habitId: number) {
   const notes = formData.get("notes") as string || "";
   const file = formData.get("image") as File | null;
 
-  // Membership validation
   const habit = await db.habit.findUnique({
     where: { id: habitId },
     include: { members: true }
@@ -167,10 +222,9 @@ export async function logHabit(formData: FormData, userId: number, habitId: numb
   }
 
   let finalProofUrl = null;
-  //Date variable for filekey and habitlog
   const now = new Date();
 
-  if (file && file.size > 0) {  // Cloud storage upload
+  if (file && file.size > 0) {
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
       const fileKey = `users/${userId}/habits/${habitId}/${now.toISOString().replace(/[:.]/g, '-')}-${file.name.replace(/\s+/g, '-')}`;
