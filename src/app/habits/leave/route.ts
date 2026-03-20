@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import db from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -9,14 +9,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing data" }, { status: 400 });
     }
 
-    await db.habitParticipant.deleteMany({
+    await db.habitMember.deleteMany({
       where: {
         habitId: Number(habitId),
         userId: Number(userId),
       },
     });
 
-    const remainingParticipants = await db.habitParticipant.count({
+    const remainingParticipants = await db.habitMember.count({
       where: { habitId: Number(habitId) },
     });
 

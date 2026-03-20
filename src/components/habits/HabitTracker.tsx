@@ -82,7 +82,7 @@ export default function HabitTracker({
               <span>{habit.frequencyCount} time(s) per {habit.frequencyPeriod.toLowerCase()}</span>
               {habit.isGroup && (
                 <span className="flex items-center gap-1 text-gray-400 font-normal">
-                  <ChevronRight className="w-4 h-4" /> 👥 Group Habit
+                  <ChevronRight className="w-4 h-4" /> Group Habit
                 </span>
               )}
             </div>

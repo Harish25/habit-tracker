@@ -4,12 +4,12 @@ import { useActionState } from 'react'
 import { loginUser } from '../actions'
 import Link from 'next/link'
 
-// Define styles as constants to clean up the JSX
+//Define styles as constants to clean up jsx
 const styles = {
   container: "flex min-h-screen items-center justify-center bg-gray-50",
   card: "w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg",
   input: "w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-black",
-  button: "w-full py-3 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition"
+  button: "w-full py-3 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition"
 }
 
 export default function LoginPage() {
@@ -48,7 +48,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-gray-600">
-          New here? <Link href="/users/register" className="text-green-600 hover:underline">Register account</Link>
+          New here? <Link href="/users/register" className="text-indigo-600 hover:underline">Register account</Link>
         </p>
       </div>
     </div>
