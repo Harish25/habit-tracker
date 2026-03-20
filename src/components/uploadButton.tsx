@@ -2,6 +2,7 @@
 
 import { useRef, useState, ChangeEvent } from "react";
 import { Image as ImageIcon, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface UploadButtonProps {
   onFileSelect: (file: File | null) => void;
@@ -12,7 +13,7 @@ export default function UploadButton({ onFileSelect }: UploadButtonProps) {
   const [fileName, setFileName] = useState<string | null>(null);
 
   const handleButtonClick = () => {
-    // Programmatically trigger the hidden file input
+    // Trigger the hidden file input
     fileInputRef.current?.click();
   };
 
@@ -28,7 +29,7 @@ export default function UploadButton({ onFileSelect }: UploadButtonProps) {
   };
 
   const clearFile = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Stop the click from opening the file picker again
+    e.stopPropagation(); // Stop mouse click from opening file picker again
     setFileName(null);
     onFileSelect(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -45,18 +46,19 @@ export default function UploadButton({ onFileSelect }: UploadButtonProps) {
         className="hidden"
       />
 
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={handleButtonClick}
         className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all border ${
           fileName 
-            ? "bg-green-50 text-green-700 border-green-200" 
+            ? "bg-green-50 text-green-700 hover:bg-green-50 hover:text-green-700 border-green-200" 
             : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 active:bg-gray-100"
         }`}
       >
         <ImageIcon className={`w-4 h-4 ${fileName ? "text-green-600" : "text-gray-500"}`} />
         {fileName ? "Photo Attached" : "Attach Proof"}
-      </button>
+      </Button>
 
       {fileName && (
         <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded border border-gray-100 animate-in fade-in slide-in-from-top-1">
