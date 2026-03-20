@@ -1,6 +1,9 @@
+"use client";
+
 import { useActionState, useState } from "react";
-import { updateHabit, inviteUserToHabit, respondToHabitInvitation } from "@/app/habits/actions";
-import { MembershipStatus, FrequencyPeriod } from "@prisma/client";
+import { updateHabit, inviteUserToHabit, leaveHabit } from "@/app/habits/actions";
+import { FrequencyPeriod } from "@prisma/client";
+import { useRouter } from "next/navigation";
 
 interface HabitSettingsTabProps {
   habit: { 
@@ -14,10 +17,13 @@ interface HabitSettingsTabProps {
   members: { userId: number; username: string; email: string; status: string }[];
   userId: number;
   onRefresh?: () => void;
+  onDelete?: (id: number) => void;
 }
 
-export default function HabitSettingsTab({ habit, members, userId, onRefresh }: HabitSettingsTabProps) {
+export default function HabitSettingsTab({ habit, members, userId, onRefresh, onDelete }: HabitSettingsTabProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const router = useRouter();
   
   const [updateState, updateAction, isUpdating] = useActionState(async (prevState: any, formData: FormData) => {
     try {
@@ -25,9 +31,14 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh }: 
       const description = formData.get("description") as string;
       const frequencyCount = parseInt(formData.get("frequencyCount") as string, 10);
       const frequencyPeriod = formData.get("frequencyPeriod") as FrequencyPeriod;
-      const isGroup = formData.get("isGroup") === "true";
 
-      await updateHabit(habit.id, userId, { name, description, frequencyCount, frequencyPeriod, isGroup });
+      await updateHabit(habit.id, userId, { 
+        name, 
+        description, 
+        frequencyCount, 
+        frequencyPeriod 
+      });
+      
       setIsEditing(false);
       if (onRefresh) onRefresh();
       return { message: "Updated!", error: false };
@@ -40,11 +51,30 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh }: 
     try {
       const usernameOrEmail = formData.get("user") as string;
       await inviteUserToHabit(habit.id, userId, usernameOrEmail);
+      if (onRefresh) onRefresh();
       return { message: "Invitation sent!", error: false };
     } catch (e: any) {
       return { message: e.message, error: true };
     }
   }, { message: "", error: false });
+
+  const handleLeaveHabit = async () => {
+    if (!confirm("Are you sure you want to leave this habit?")) return;
+    
+    setIsLeaving(true);
+    try {
+      await leaveHabit(habit.id, userId);
+      
+      if (onDelete) {
+        onDelete(habit.id);
+      }
+    } catch (err) {
+      alert("Failed to leave habit. Please try again.");
+      console.error(err);
+    } finally {
+      setIsLeaving(false);
+    }
+  };
 
   return (
     <div className="space-y-8 p-6">
@@ -104,17 +134,7 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh }: 
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                id="editGroup" 
-                name="isGroup" 
-                value="true" 
-                defaultChecked={habit.isGroup}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded" 
-              />
-              <label htmlFor="editGroup" className="text-sm font-medium text-gray-700">Group Habit</label>
-            </div>
+            
             <div className="flex gap-2">
               <button 
                 type="submit" 
@@ -144,7 +164,9 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh }: 
               </div>
               <div>
                 <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Type</p>
-                <p className="text-gray-900 font-medium">{habit.isGroup ? "👥 Group" : "👤 Personal"}</p>
+                <p className="text-gray-900 font-medium">
+                  {habit.isGroup ? "👥 Group" : "👤 Personal"}
+                </p>
               </div>
             </div>
             <div>
@@ -187,20 +209,30 @@ export default function HabitSettingsTab({ habit, members, userId, onRefresh }: 
             <input 
               name="user"
               placeholder="Username or Email"
-              className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900"
               required
               disabled={isInviting}
             />
             <button 
               type="submit"
               disabled={isInviting}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50"
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
             >
               {isInviting ? "Inviting..." : "Send Invite"}
             </button>
           </form>
           {inviteState.message && <p className={`text-sm mt-2 ${inviteState.error ? "text-red-500" : "text-green-500"}`}>{inviteState.message}</p>}
         </div>
+      </section>
+
+      <section className="pt-4">
+        <button
+          onClick={handleLeaveHabit}
+          disabled={isLeaving}
+          className="w-full p-4 border border-red-200 text-red-600 rounded-2xl font-bold hover:bg-red-50 transition flex items-center justify-center gap-2"
+        >
+          {isLeaving ? "Leaving..." : "Leave Habit"}
+        </button>
       </section>
     </div>
   );

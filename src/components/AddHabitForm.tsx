@@ -21,49 +21,53 @@ export default function AddHabitForm({ userId, onClose }: { userId: number, onCl
   }, { message: "", error: false });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h2 className="text-xl font-bold mb-4 text-gray-900">Create New Habit</h2>
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-slate-100">
+        <div className="mb-6">
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">New Habit</h2>
+          <p className="text-slate-500 text-sm">Define your goal to get started.</p>
+        </div>
         
-        <form action={formAction} className="space-y-4">
+        <form action={formAction} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Habit Name</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Habit Name</label>
             <input
               name="title"
               placeholder="e.g. Morning Run"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-100"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition disabled:opacity-50"
               required
               autoFocus
               disabled={isPending}
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Description</label>
             <textarea
               name="description"
               placeholder="What is your goal?"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none disabled:bg-gray-100"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition disabled:opacity-50"
               rows={3}
               disabled={isPending}
             />
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 font-mono">Frequency Goal</label>
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Frequency Goal</label>
             <div className="flex items-center gap-3">
               <input 
                 type="number"
                 name="frequencyCount"
                 defaultValue={1}
                 min={1}
-                className="w-20 px-3 py-2 border-2 border-white bg-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-center font-bold"
+                className="w-16 px-2 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-center font-bold text-slate-700"
                 required
               />
-              <span className="text-sm text-gray-400 font-medium">time(s) every</span>
+              <span className="text-sm text-slate-400 font-semibold italic">time(s) every</span>
               <select 
                 name="frequencyPeriod" 
                 defaultValue="DAY"
-                className="flex-1 px-3 py-2 border-2 border-white bg-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-bold appearance-none"
+                className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-700 appearance-none cursor-pointer"
               >
                 <option value="DAY">Day</option>
                 <option value="WEEK">Week</option>
@@ -72,29 +76,33 @@ export default function AddHabitForm({ userId, onClose }: { userId: number, onCl
             </div>
           </div>
 
-          {state.error && <p className="text-red-500 text-sm">{state.message}</p>}
+          {state.error && (
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
+              <p className="text-red-500 text-xs font-bold text-center">{state.message}</p>
+            </div>
+          )}
 
-          <div className="flex gap-2 justify-end pt-2">
+          <div className="flex gap-3 pt-2">
             <button 
               type="button" 
               onClick={onClose} 
               disabled={isPending}
-              className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+              className="flex-1 px-4 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button 
               type="submit" 
               disabled={isPending}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 disabled:bg-indigo-400 flex items-center gap-2"
+              className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition disabled:bg-indigo-400 flex items-center justify-center gap-2"
             >
               {isPending ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                  Creating...
+                  Saving...
                 </>
               ) : (
-                "Create"
+                "Start Habit"
               )}
             </button>
           </div>
