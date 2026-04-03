@@ -207,7 +207,7 @@ npx prisma generate
 npx prisma db push  
 ```
 
-To stop the database use \`docker-compose down\`. To stop and wipe the database use \`docker-compose down \-v\`.
+To stop the database use `docker-compose down`. To stop and wipe the database use `docker-compose down -v`.
 
 ### Cloud Storage Configuration
 
