@@ -192,20 +192,20 @@ For the dev environment sensitive information is stored in a .env configuration 
 The PostgreSQL database is managed through Docker Compose The docker-compose.yml file at the root directory will build and configure the PostgreSQL container using the database related values provided in the .env file. It will also create a volume to persist user data generated in the dev environment. Prisma ORM is used for schema management and migrations.
 
 1\. Build and run the container:  
-\`\`\`bash  
+```bash  
 cd habit-tracker  
 docker-compose up  
-\`\`\`
+```
 
 2\. Generate prisma client:  
-\`\`\`bash  
+```bash  
 npx prisma generate  
-\`\`\`
+```
 
 3\. Sync prisma schema to database:  
-\`\`\`bash  
+```bash  
 npx prisma db push  
-\`\`\`
+```
 
 To stop the database use \`docker-compose down\`. To stop and wipe the database use \`docker-compose down \-v\`.
 
@@ -228,17 +228,17 @@ Once the bucket is created tokens will need to be generated for the application 
 3. Provide a name for the key
 4. After generating the “Access Key” and “Secret Key” will be provided
 5. Using the chosen bucket name, region and generated key values fill out the following values in the .env file:
-   1. DO_SPACES_KEY, DO_SPACES_SECRET, DO_SPACES_REGION, DO_SPACES_BUCKET
+    * DO_SPACES_KEY, DO_SPACES_SECRET, DO_SPACES_REGION, DO_SPACES_BUCKET
 
 ### Local Development
 
 Before starting the local dev environment ensure the database has been initialized by following the steps outlined above. To locally start the environment run the following commands in terminal:  
-\`\`\`bash  
+```bash  
 cd habit-tracker  
 npm install  
-docker-compose up \-d  
+docker-compose up -d  
 npm run dev  
-\`\`\`
+```
 
 Once the dev environment has been the started the application frontend can be accessed at: [http://localhost:3000](http://localhost:3000)
 
@@ -252,11 +252,11 @@ Our team verified the correctness of the AI outputs through technical means thro
 
 ## **Individual Contributions**
 
-| Team Member | Contributions                                                                                                                                                               |
-| :---------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nathes      | Dashboard UI Habit creation functionality Edit habits functionality Invite member to habit functionality Made habits personal/group depending on number of members in habit |
-| Ashwin      | Login/Register page Authentication via JWT token using Jose library S3 Digital Ocean Spaces Buckets Image Upload for proof                                                  |
-| Harish      | Habit component system Notification tab Live notifications Streak counting logic                                                                                            |
+| Team Member | Contributions                                                                                                                                                                   |
+| :---------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------     |
+| Nathes      | Dashboard UI, Habit creation functionality, Edit habits functionality, Invite member to habit functionality, Made habits personal/group depending on number of members in habit |
+| Ashwin      | Login/Register page, Authentication via JWT token using Jose library, S3 Digital Ocean Spaces Buckets Image Upload for proof                                                    |
+| Harish      | Habit tracker component system, Notification tab, Live notifications functionality, Streak counting logic                                                                       |
 
 ## **Lessons Learned**
 
