@@ -102,5 +102,5 @@ Many teams in 2026 use a "Hybrid" approach. They host the main Next.js site on V
 * Coming from a React/Express architecture the team was more accustomed to using persistent WebSocket servers on Express  
 * This prompt gave the team a great starting point to start researching alternative websocket solutions for the live update feature  
 * The options from the AI response boiled down into PaaS vs IaaS  
-* For our use case a PaaS solution seemed like the best fit. The live update feature only required streaming small text updates and going with a managed service would free the team from having to manage additional infrastructure (besides DigitalOcean).   
-* After further research from this starting point the team was able to make a well informed decision and decide on using Pusher to implement this feature.
+* For our use case a PaaS solution seemed like the best fit. The live update feature only required streaming small text updates and going with a managed service would free the team from having to manage additional infrastructure (besides DigitalOcean)   
+* After further research from this starting point the team was able to make a well informed decision and decide on using Pusher to implement this feature
